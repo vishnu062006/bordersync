@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -90,31 +91,37 @@ const fieldStepMap = {
   criminalRecord: 6,
 };
 
-function ProgressBar({ step }) {
+function ProgressBar({ step, onStepSelect }) {
   return (
     <div className="mb-10">
       <div className="flex items-center justify-between mb-3">
         {stepLabels.map((s, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500"
-              style={{
-                background:
-                  i < step
-                    ? 'linear-gradient(135deg, #E85D1A, #FF7A3D)'
-                    : i === step
-                    ? 'rgba(232, 93, 26, 0.15)'
-                    : 'rgba(255,255,255,0.05)',
-                color: i <= step ? '#fff' : '#6B7280',
-                border: i === step ? '2px solid #E85D1A' : '2px solid transparent',
-                boxShadow: i < step ? '0 0 15px rgba(232, 93, 26, 0.3)' : 'none',
-              }}
+            <button
+              type="button"
+              onClick={() => onStepSelect(i)}
+              className="flex items-center gap-2 rounded-xl transition-all duration-300"
             >
-              {i < step ? 'OK' : i + 1}
-            </div>
-            <span className={`text-xs font-medium hidden sm:inline ${i <= step ? 'text-white' : 'text-gray-600'}`}>
-              {s}
-            </span>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500"
+                style={{
+                  background:
+                    i < step
+                      ? 'linear-gradient(135deg, #E85D1A, #FF7A3D)'
+                      : i === step
+                      ? 'rgba(232, 93, 26, 0.15)'
+                      : 'rgba(255,255,255,0.05)',
+                  color: i <= step ? '#fff' : '#6B7280',
+                  border: i === step ? '2px solid #E85D1A' : '2px solid transparent',
+                  boxShadow: i < step ? '0 0 15px rgba(232, 93, 26, 0.3)' : 'none',
+                }}
+              >
+                {i < step ? 'OK' : i + 1}
+              </div>
+              <span className={`text-xs font-medium hidden sm:inline ${i <= step ? 'text-white' : 'text-gray-600'}`}>
+                {s}
+              </span>
+            </button>
           </div>
         ))}
       </div>
@@ -273,6 +280,7 @@ function CountryCheckboxSelect({ label, name, value, onChange, options, searchVa
 }
 
 export default function NewEntryPage() {
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(0);
   const [meta, setMeta] = useState(emptyMeta);
@@ -541,6 +549,18 @@ export default function NewEntryPage() {
     }
   };
 
+  const jumpToStep = (targetStep) => {
+    if (targetStep === step) return;
+    if (targetStep < step) {
+      setSubmitError('');
+      setStep(targetStep);
+      return;
+    }
+    if (validateStep(step)) {
+      setStep(targetStep);
+    }
+  };
+
   const prevStep = () => {
     setSubmitError('');
     setStep((prev) => Math.max(prev - 1, 0));
@@ -580,7 +600,7 @@ export default function NewEntryPage() {
         criminalRecord: form.criminalRecord === 'true',
       });
       resetForm();
-      setSubmitOk('Entry saved.');
+      navigate('/dashboard');
     } catch (err) {
       if (err.fields) {
         setErrors(err.fields);
@@ -610,7 +630,7 @@ export default function NewEntryPage() {
       </header>
 
       <div className="max-w-4xl">
-        <ProgressBar step={step} />
+        <ProgressBar step={step} onStepSelect={jumpToStep} />
 
         <div
           className="rounded-2xl p-8 opacity-0 animate-fade-up stagger-1"

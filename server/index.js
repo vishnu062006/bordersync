@@ -206,6 +206,68 @@ function validateEntryPayload(payload, meta = {}) {
   };
 }
 
+function getFlaggedAlert(entry) {
+  if (entry.criminalRecord) {
+    return {
+      type: 'WATCHLIST_HIT',
+      severity: 'CRITICAL',
+      message: 'Traveler self-reported a criminal record. Immediate secondary screening required.',
+      agency: 'International Liaison Unit',
+    };
+  }
+
+  if (entry.deported) {
+    return {
+      type: 'WATCHLIST_HIT',
+      severity: 'HIGH',
+      message: 'Traveler reported a prior deportation. Escalate to border security for review.',
+      agency: 'Border Security Division',
+    };
+  }
+
+  if (entry.overstayed) {
+    return {
+      type: 'OVERSTAY_RISK',
+      severity: 'MEDIUM',
+      message: 'Travel history indicates a previous visa overstay. Immigration analytics review required.',
+      agency: 'Immigration Analytics',
+    };
+  }
+
+  if (entry.visaDenied) {
+    return {
+      type: 'VISA_ANOMALY',
+      severity: 'MEDIUM',
+      message: 'Traveler reported a previous visa denial. Visa credentials require manual verification.',
+      agency: 'Diplomatic Affairs Bureau',
+    };
+  }
+
+  return null;
+}
+
+function buildAlertForEntry(entry, existingAlertId) {
+  const alertDetails = getFlaggedAlert(entry) || {
+    type: 'DOCUMENT_MISMATCH',
+    severity: 'HIGH',
+    message: 'Traveler has been flagged for manual review. Secondary screening required.',
+    agency: 'Border Security Division',
+  };
+
+  return {
+    id: existingAlertId || `ALT-${entry.id}`,
+    travelerId: entry.id,
+    travelerName: entry.fullName || entry.name,
+    nationality: entry.nationality,
+    type: alertDetails.type,
+    severity: alertDetails.severity,
+    message: alertDetails.message,
+    timestamp: entry.entryTime || formatEntryTime(),
+    agency: alertDetails.agency,
+    acknowledged: false,
+  };
+}
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
@@ -243,15 +305,33 @@ app.get('/api/dashboard', async (req, res) => {
 });
 
 app.get('/api/alerts', async (req, res) => {
-  const [alertsSnap, agenciesSnap] = await Promise.all([
+  const [alertsSnap, agenciesSnap, entriesSnap] = await Promise.all([
     db.collection('alerts').orderBy('timestamp', 'desc').limit(50).get(),
     db.collection('agencies').get(),
+    db.collection('entries').where('status', '==', 'FLAGGED').get(),
   ]);
 
   const alerts = alertsSnap.docs.map((d) => d.data());
   const agencies = agenciesSnap.docs.map((d) => d.data());
+  const flaggedEntries = entriesSnap.docs.map((d) => d.data());
+  const alertsByTravelerId = new Map(alerts.map((alert) => [alert.travelerId, alert]));
+  const missingAlerts = flaggedEntries
+    .filter((entry) => !alertsByTravelerId.has(entry.id))
+    .map((entry) => buildAlertForEntry(entry));
 
-  res.json({ alerts, agencies });
+  if (missingAlerts.length > 0) {
+    const batch = db.batch();
+    missingAlerts.forEach((alert) => {
+      batch.set(db.collection('alerts').doc(alert.id), alert, { merge: true });
+    });
+    await batch.commit();
+  }
+
+  const allAlerts = [...alerts, ...missingAlerts]
+    .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
+    .slice(0, 50);
+
+  res.json({ alerts: allAlerts, agencies });
 });
 
 app.post('/api/alerts/:id/ack', async (req, res) => {
@@ -309,6 +389,8 @@ app.post('/api/entries', async (req, res) => {
 
   const entryId = `TRV-${nanoid(6).toUpperCase()}`;
   const entryTime = formatEntryTime();
+  const alertDetails = getFlaggedAlert(sanitized);
+  const status = alertDetails ? 'FLAGGED' : 'PENDING';
 
   const entry = {
     id: entryId,
@@ -346,11 +428,16 @@ app.post('/api/entries', async (req, res) => {
     countriesVisited,
     criminalRecord,
     checkpoint: checkpoint || portOfEntry,
-    status: 'PENDING',
+    status,
     entryTime,
   };
 
   await db.collection('entries').doc(entryId).set(entry);
+
+  if (status === 'FLAGGED' && alertDetails) {
+    const alert = buildAlertForEntry(entry, `ALT-${entryId}`);
+    await db.collection('alerts').doc(alert.id).set(alert);
+  }
 
   res.status(201).json({ entry });
 });
