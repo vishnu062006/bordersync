@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Circle, Shield, Lock, ArrowRight } from 'lucide-react';
 import { animate } from 'motion/react';
+import { useAuth } from '../context/AuthContext';
 
 const Spline = lazy(() => import('@splinetool/react-spline'));
 
@@ -247,10 +248,12 @@ function ScrollReveal() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
     const navigate = useNavigate();
+    const { signIn } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [splineReady, setSplineReady] = useState(false);
+    const [error, setError] = useState('');
 
     const fadeUp = {
         hidden: { opacity: 0, y: 28 },
@@ -260,11 +263,34 @@ export default function LoginPage() {
         }),
     };
 
-    const handleLogin = (e) => {
+    // No auto sign-out here; in-memory auth persistence already prevents
+    // sessions from surviving reloads.
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setTimeout(() => navigate('/dashboard'), 1400);
+        setError('');
+        try {
+            await signIn(email, password);
+            navigate('/dashboard');
+        } catch (err) {
+            const code = err?.code || '';
+            if (code === 'auth/invalid-credential') {
+                setError('Invalid email or password.');
+            } else if (code === 'auth/user-not-found') {
+                setError('No account found for this email.');
+            } else if (code === 'auth/wrong-password') {
+                setError('Incorrect password.');
+            } else if (code === 'auth/too-many-requests') {
+                setError('Too many attempts. Try again later.');
+            } else {
+                setError('Login failed. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     const inputStyle = {
         background: 'rgba(255,255,255,0.05)',
@@ -425,7 +451,6 @@ export default function LoginPage() {
                                         />
                                     </div>
 
-                                    {/* Password */}
                                     <div>
                                         <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-2"
                                             style={{ color: 'rgba(255,255,255,0.32)' }}>
@@ -439,6 +464,15 @@ export default function LoginPage() {
                                             onFocus={inputFocus} onBlur={inputBlur}
                                         />
                                     </div>
+
+                                    {error && (
+                                        <div
+                                            className="text-[11px] px-3 py-2 rounded-lg"
+                                            style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#FCA5A5', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+                                        >
+                                            {error}
+                                        </div>
+                                    )}
 
                                     {/* Button */}
                                     <motion.button
@@ -469,8 +503,7 @@ export default function LoginPage() {
                                 </form>
 
                                 {/* Links */}
-                                <div className="mt-5 flex justify-between text-[11px]" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                                    <span className="hover:text-orange-400 cursor-pointer transition-colors">Forgot password?</span>
+                                <div className="mt-5 flex justify-end text-[11px]" style={{ color: 'rgba(255,255,255,0.2)' }}>
                                     <span className="hover:text-orange-400 cursor-pointer transition-colors">Request access</span>
                                 </div>
 

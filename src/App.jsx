@@ -4,6 +4,8 @@ import DashboardPage from './pages/DashboardPage';
 import NewEntryPage from './pages/NewEntryPage';
 import AlertsPage from './pages/AlertsPage';
 import Sidebar from './components/Sidebar';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 function DashboardLayout() {
   return (
@@ -18,15 +20,23 @@ function DashboardLayout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/new-entry" element={<NewEntryPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/new-entry" element={<NewEntryPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

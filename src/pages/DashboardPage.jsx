@@ -1,10 +1,49 @@
-import { stats, travelers, agencies } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import TravelerTable from '../components/TravelerTable';
 
 export default function DashboardPage() {
+    const { user, loading: authLoading } = useAuth();
+    const [stats, setStats] = useState([]);
+    const [travelers, setTravelers] = useState([]);
+    const [agencies, setAgencies] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (!user) {
+            setError('Not authenticated.');
+            setLoading(false);
+            return;
+        }
+        let active = true;
+        api.getDashboard()
+            .then((data) => {
+                if (!active) return;
+                setStats(data.stats || []);
+                setTravelers(data.travelers || []);
+                setAgencies(data.agencies || []);
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (!active) return;
+                setError(err.message || 'Failed to load dashboard.');
+                setLoading(false);
+            });
+        return () => { active = false; };
+    }, [user, authLoading]);
+
     return (
         <div className="min-h-screen bg-navy-900 bg-grid">
+            {loading && (
+                <div className="glass-card p-4 text-sm text-gray-400 mb-6">Loading dashboard...</div>
+            )}
+            {error && (
+                <div className="glass-card p-4 text-sm text-red-400 mb-6">{error}</div>
+            )}
             {/* Header */}
             <header className="mb-8 opacity-0 animate-fade-up">
                 <div className="flex items-center justify-between">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { alerts, agencies } from '../data/mockData';
+import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 const severityConfig = {
     CRITICAL: {
@@ -53,7 +54,35 @@ const typeLabels = {
 };
 
 export default function AlertsPage() {
+    const { user, loading: authLoading } = useAuth();
     const [acknowledgedMap, setAcknowledgedMap] = useState({});
+    const [alerts, setAlerts] = useState([]);
+    const [agencies, setAgencies] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (!user) {
+            setError('Not authenticated.');
+            setLoading(false);
+            return;
+        }
+        let active = true;
+        api.getAlerts()
+            .then((data) => {
+                if (!active) return;
+                setAlerts(data.alerts || []);
+                setAgencies(data.agencies || []);
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (!active) return;
+                setError(err.message || 'Failed to load alerts.');
+                setLoading(false);
+            });
+        return () => { active = false; };
+    }, [user, authLoading]);
 
     const sortedAlerts = [...alerts].sort((a, b) => {
         const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
@@ -64,8 +93,13 @@ export default function AlertsPage() {
         (a) => !a.acknowledged && !acknowledgedMap[a.id]
     ).length;
 
-    const handleAcknowledge = (alertId) => {
+    const handleAcknowledge = async (alertId) => {
         setAcknowledgedMap((prev) => ({ ...prev, [alertId]: true }));
+        try {
+            await api.ackAlert(alertId);
+        } catch (err) {
+            setAcknowledgedMap((prev) => ({ ...prev, [alertId]: false }));
+        }
     };
 
     // Simulated agency acknowledgment status
@@ -76,6 +110,12 @@ export default function AlertsPage() {
 
     return (
         <div className="min-h-screen bg-navy-900 bg-grid">
+            {loading && (
+                <div className="glass-card p-4 text-sm text-gray-400 mb-6">Loading alerts...</div>
+            )}
+            {error && (
+                <div className="glass-card p-4 text-sm text-red-400 mb-6">{error}</div>
+            )}
             {/* Header */}
             <header className="mb-8 opacity-0 animate-fade-up">
                 <div className="flex items-center justify-between">
