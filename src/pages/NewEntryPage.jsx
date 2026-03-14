@@ -13,21 +13,88 @@ const emptyMeta = {
   entryCounts: [],
 };
 
+const stepLabels = [
+  'Identity',
+  'Passport',
+  'Visa',
+  'Travel',
+  'Stay',
+  'Purpose',
+  'History',
+  'Review',
+];
+
+const initialFormState = {
+  fullName: '',
+  gender: '',
+  dob: '',
+  nationality: '',
+  residenceCountry: '',
+  phone: '',
+  email: '',
+  passportNumber: '',
+  passportIssuingCountry: '',
+  passportIssueDate: '',
+  passportExpiryDate: '',
+  visaType: '',
+  visaNumber: '',
+  visaIssuingCountry: '',
+  visaIssueDate: '',
+  visaExpiryDate: '',
+  entryCount: '',
+  destinationCountry: '',
+  portOfEntry: '',
+  arrivalDate: '',
+  departureDate: '',
+  stayDurationDays: '',
+  accommodationType: '',
+  accommodationAddress: '',
+  purposeOfVisit: '',
+  visaDenied: '',
+  deported: '',
+  overstayed: '',
+  countriesVisited: [],
+  criminalRecord: '',
+};
+
+const fieldStepMap = {
+  fullName: 0,
+  gender: 0,
+  dob: 0,
+  nationality: 0,
+  residenceCountry: 0,
+  phone: 0,
+  email: 0,
+  passportNumber: 1,
+  passportIssuingCountry: 1,
+  passportIssueDate: 1,
+  passportExpiryDate: 1,
+  visaType: 2,
+  visaNumber: 2,
+  visaIssuingCountry: 2,
+  visaIssueDate: 2,
+  visaExpiryDate: 2,
+  entryCount: 2,
+  destinationCountry: 3,
+  portOfEntry: 3,
+  arrivalDate: 3,
+  departureDate: 3,
+  stayDurationDays: 4,
+  accommodationType: 4,
+  accommodationAddress: 4,
+  purposeOfVisit: 5,
+  visaDenied: 6,
+  deported: 6,
+  overstayed: 6,
+  countriesVisited: 6,
+  criminalRecord: 6,
+};
+
 function ProgressBar({ step }) {
-  const steps = [
-    'Identity',
-    'Passport',
-    'Visa',
-    'Travel',
-    'Stay',
-    'Purpose',
-    'History',
-    'Review',
-  ];
   return (
     <div className="mb-10">
       <div className="flex items-center justify-between mb-3">
-        {steps.map((s, i) => (
+        {stepLabels.map((s, i) => (
           <div key={i} className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500"
@@ -55,7 +122,7 @@ function ProgressBar({ step }) {
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
           style={{
-            width: `${(step / (steps.length - 1)) * 100}%`,
+            width: `${(step / (stepLabels.length - 1)) * 100}%`,
             background: 'linear-gradient(90deg, #E85D1A, #FF7A3D)',
             boxShadow: '0 0 10px rgba(232, 93, 26, 0.4)',
           }}
@@ -215,38 +282,7 @@ export default function NewEntryPage() {
   const [submitOk, setSubmitOk] = useState('');
   const [errors, setErrors] = useState({});
   const [countrySearch, setCountrySearch] = useState('');
-  const [form, setForm] = useState({
-    fullName: '',
-    gender: '',
-    dob: '',
-    nationality: '',
-    residenceCountry: '',
-    phone: '',
-    email: '',
-    passportNumber: '',
-    passportIssuingCountry: '',
-    passportIssueDate: '',
-    passportExpiryDate: '',
-    visaType: '',
-    visaNumber: '',
-    visaIssuingCountry: '',
-    visaIssueDate: '',
-    visaExpiryDate: '',
-    entryCount: '',
-    destinationCountry: '',
-    portOfEntry: '',
-    arrivalDate: '',
-    departureDate: '',
-    stayDurationDays: '',
-    accommodationType: '',
-    accommodationAddress: '',
-    purposeOfVisit: '',
-    visaDenied: 'false',
-    deported: 'false',
-    overstayed: 'false',
-    countriesVisited: [],
-    criminalRecord: 'false',
-  });
+  const [form, setForm] = useState(initialFormState);
 
   useEffect(() => {
     if (authLoading) return;
@@ -286,6 +322,161 @@ export default function NewEntryPage() {
     return countries.filter((c) => c.toLowerCase().includes(q));
   }, [countries, countrySearch]);
 
+  const isKnownCountry = (value) => countries.includes(value);
+  const parseDate = (value) => (value ? new Date(`${value}T00:00:00`) : null);
+  const trimValue = (value) => (typeof value === 'string' ? value.trim() : value);
+  const isPositiveInteger = (value) => /^[1-9]\d*$/.test(String(value));
+
+  const getErrorsForStep = (s, data) => {
+    const next = {};
+    const fullName = trimValue(data.fullName);
+    const nationality = trimValue(data.nationality);
+    const residenceCountry = trimValue(data.residenceCountry);
+    const phone = trimValue(data.phone);
+    const email = trimValue(data.email);
+    const passportNumber = trimValue(data.passportNumber);
+    const passportIssuingCountry = trimValue(data.passportIssuingCountry);
+    const visaNumber = trimValue(data.visaNumber);
+    const visaIssuingCountry = trimValue(data.visaIssuingCountry);
+    const destinationCountry = trimValue(data.destinationCountry);
+    const accommodationAddress = trimValue(data.accommodationAddress);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (s === 0) {
+      if (!fullName) next.fullName = 'Required field';
+      if (!data.gender) next.gender = 'Required field';
+      if (!data.dob) {
+        next.dob = 'Required field';
+      } else {
+        const dob = parseDate(data.dob);
+        if (!dob || Number.isNaN(dob.getTime())) next.dob = 'Invalid date';
+        else if (dob > today) next.dob = 'Date of birth cannot be in the future';
+      }
+      if (!nationality) next.nationality = 'Required field';
+      else if (!isKnownCountry(nationality)) next.nationality = 'Select a listed country';
+      if (!residenceCountry) next.residenceCountry = 'Required field';
+      else if (!isKnownCountry(residenceCountry)) next.residenceCountry = 'Select a listed country';
+      if (!phone) next.phone = 'Required field';
+      else if (!/^[+\d][\d\s()-]{6,19}$/.test(phone)) next.phone = 'Enter a valid phone number';
+      if (!email) next.email = 'Required field';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Enter a valid email address';
+    }
+
+    if (s === 1) {
+      if (!passportNumber) next.passportNumber = 'Required field';
+      if (!passportIssuingCountry) next.passportIssuingCountry = 'Required field';
+      else if (!isKnownCountry(passportIssuingCountry)) next.passportIssuingCountry = 'Select a listed country';
+      if (!data.passportIssueDate) next.passportIssueDate = 'Required field';
+      if (!data.passportExpiryDate) next.passportExpiryDate = 'Required field';
+
+      const issueDate = parseDate(data.passportIssueDate);
+      const expiryDate = parseDate(data.passportExpiryDate);
+      if (data.passportIssueDate && (!issueDate || Number.isNaN(issueDate.getTime()))) next.passportIssueDate = 'Invalid date';
+      if (data.passportExpiryDate && (!expiryDate || Number.isNaN(expiryDate.getTime()))) next.passportExpiryDate = 'Invalid date';
+      if (issueDate && expiryDate && issueDate >= expiryDate) next.passportExpiryDate = 'Expiry must be after issue date';
+      if (expiryDate && expiryDate <= today) next.passportExpiryDate = 'Passport must still be valid';
+
+      const arrival = parseDate(data.arrivalDate);
+      if (expiryDate && arrival) {
+        const sixMonthsLater = new Date(arrival);
+        sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+        if (expiryDate < sixMonthsLater) next.passportExpiryDate = 'Must be valid 6 months beyond arrival';
+      }
+    }
+
+    if (s === 2) {
+      if (!data.visaType) next.visaType = 'Required field';
+      if (!visaNumber) next.visaNumber = 'Required field';
+      if (!visaIssuingCountry) next.visaIssuingCountry = 'Required field';
+      else if (!isKnownCountry(visaIssuingCountry)) next.visaIssuingCountry = 'Select a listed country';
+      if (!data.visaIssueDate) next.visaIssueDate = 'Required field';
+      if (!data.visaExpiryDate) next.visaExpiryDate = 'Required field';
+      if (!data.entryCount) next.entryCount = 'Required field';
+
+      const issueDate = parseDate(data.visaIssueDate);
+      const expiryDate = parseDate(data.visaExpiryDate);
+      if (data.visaIssueDate && (!issueDate || Number.isNaN(issueDate.getTime()))) next.visaIssueDate = 'Invalid date';
+      if (data.visaExpiryDate && (!expiryDate || Number.isNaN(expiryDate.getTime()))) next.visaExpiryDate = 'Invalid date';
+      if (issueDate && expiryDate && issueDate >= expiryDate) next.visaExpiryDate = 'Expiry must be after issue date';
+
+      const arrival = parseDate(data.arrivalDate);
+      const departure = parseDate(data.departureDate);
+      if (expiryDate && arrival && expiryDate < arrival) next.visaExpiryDate = 'Visa must be valid on arrival';
+      if (expiryDate && departure && expiryDate < departure) next.visaExpiryDate = 'Visa must be valid through departure';
+    }
+
+    if (s === 3) {
+      if (!destinationCountry) next.destinationCountry = 'Required field';
+      else if (!isKnownCountry(destinationCountry)) next.destinationCountry = 'Select a listed country';
+      if (!data.portOfEntry) next.portOfEntry = 'Required field';
+      if (!data.arrivalDate) next.arrivalDate = 'Required field';
+      if (!data.departureDate) next.departureDate = 'Required field';
+
+      const arrival = parseDate(data.arrivalDate);
+      const departure = parseDate(data.departureDate);
+      if (data.arrivalDate && (!arrival || Number.isNaN(arrival.getTime()))) next.arrivalDate = 'Invalid date';
+      if (data.departureDate && (!departure || Number.isNaN(departure.getTime()))) next.departureDate = 'Invalid date';
+      if (arrival && departure && arrival > departure) next.departureDate = 'Departure must be after arrival';
+    }
+
+    if (s === 4) {
+      if (!data.stayDurationDays) next.stayDurationDays = 'Required field';
+      else if (!isPositiveInteger(data.stayDurationDays)) next.stayDurationDays = 'Enter a whole number greater than 0';
+      if (!data.accommodationType) next.accommodationType = 'Required field';
+      if (!accommodationAddress) next.accommodationAddress = 'Required field';
+    }
+
+    if (s === 5) {
+      if (!data.purposeOfVisit) next.purposeOfVisit = 'Required field';
+    }
+
+    if (s === 6) {
+      if (!['true', 'false'].includes(data.visaDenied)) next.visaDenied = 'Select Yes or No';
+      if (!['true', 'false'].includes(data.deported)) next.deported = 'Select Yes or No';
+      if (!['true', 'false'].includes(data.overstayed)) next.overstayed = 'Select Yes or No';
+      if (!['true', 'false'].includes(data.criminalRecord)) next.criminalRecord = 'Select Yes or No';
+      if (!Array.isArray(data.countriesVisited) || data.countriesVisited.length === 0) {
+        next.countriesVisited = 'Select at least one country';
+      }
+    }
+
+    return next;
+  };
+
+  const getAllErrors = (data) => (
+    Object.assign(
+      {},
+      getErrorsForStep(0, data),
+      getErrorsForStep(1, data),
+      getErrorsForStep(2, data),
+      getErrorsForStep(3, data),
+      getErrorsForStep(4, data),
+      getErrorsForStep(5, data),
+      getErrorsForStep(6, data),
+    )
+  );
+
+  const getFirstErrorStep = (fieldErrors) => {
+    const steps = Object.keys(fieldErrors)
+      .map((field) => fieldStepMap[field])
+      .filter((value) => typeof value === 'number');
+    return steps.length ? Math.min(...steps) : 0;
+  };
+
+  const reviewErrors = useMemo(() => {
+    const grouped = new Map();
+    Object.entries(errors).forEach(([field, message]) => {
+      const errorStep = fieldStepMap[field];
+      if (typeof errorStep !== 'number') return;
+      const label = stepLabels[errorStep];
+      const current = grouped.get(label) || [];
+      current.push({ field, message, step: errorStep });
+      grouped.set(label, current);
+    });
+    return Array.from(grouped.entries());
+  }, [errors]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'countriesVisited') {
@@ -294,105 +485,52 @@ export default function NewEntryPage() {
         const next = new Set(prev.countriesVisited);
         if (checked) next.add(value);
         else next.delete(value);
-        return { ...prev, countriesVisited: Array.from(next) };
+        const nextForm = { ...prev, countriesVisited: Array.from(next) };
+        if (Object.keys(errors).length > 0) {
+          setErrors(getAllErrors(nextForm));
+        }
+        return nextForm;
       });
-      setErrors((prev) => ({ ...prev, countriesVisited: '' }));
       return;
     }
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    setForm((prev) => {
+      const nextForm = { ...prev, [name]: value };
+      if (Object.keys(errors).length > 0) {
+        setErrors(getAllErrors(nextForm));
+      }
+      return nextForm;
+    });
   };
 
   const stepError = (message) => {
     setSubmitError(message);
   };
 
-  const parseDate = (v) => (v ? new Date(v) : null);
-
-  const getErrorsForStep = (s, data) => {
-    const newErrors = {};
-    if (s === 0) {
-      if (!data.fullName) newErrors.fullName = 'Required field';
-      if (!data.gender) newErrors.gender = 'Required field';
-      if (!data.dob) newErrors.dob = 'Required field';
-      if (!data.nationality) newErrors.nationality = 'Required field';
-      if (!data.residenceCountry) newErrors.residenceCountry = 'Required field';
-      if (!data.phone) newErrors.phone = 'Required field';
-      if (!data.email) newErrors.email = 'Required field';
-    }
-    if (s === 1) {
-      if (!data.passportNumber) newErrors.passportNumber = 'Required field';
-      if (!data.passportIssuingCountry) newErrors.passportIssuingCountry = 'Required field';
-      if (!data.passportIssueDate) newErrors.passportIssueDate = 'Required field';
-      if (!data.passportExpiryDate) newErrors.passportExpiryDate = 'Required field';
-      if (data.arrivalDate) {
-        const passportExpiry = parseDate(data.passportExpiryDate);
-        const arrival = parseDate(data.arrivalDate);
-        if (passportExpiry && arrival) {
-          const sixMonthsLater = new Date(arrival);
-          sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-          if (passportExpiry < sixMonthsLater) {
-            newErrors.passportExpiryDate = 'Must be valid 6 months beyond arrival';
-          }
-        }
-      }
-    }
-    if (s === 2) {
-      if (!data.visaType) newErrors.visaType = 'Required field';
-      if (!data.visaNumber) newErrors.visaNumber = 'Required field';
-      if (!data.visaIssuingCountry) newErrors.visaIssuingCountry = 'Required field';
-      if (!data.visaIssueDate) newErrors.visaIssueDate = 'Required field';
-      if (!data.visaExpiryDate) newErrors.visaExpiryDate = 'Required field';
-      if (!data.entryCount) newErrors.entryCount = 'Required field';
-      if (data.arrivalDate && data.departureDate) {
-        const visaExpiry = parseDate(data.visaExpiryDate);
-        const arrival = parseDate(data.arrivalDate);
-        const departure = parseDate(data.departureDate);
-        if (visaExpiry && arrival && departure && (visaExpiry < arrival || visaExpiry < departure)) {
-          newErrors.visaExpiryDate = 'Must be valid during travel dates';
-        }
-      }
-    }
-    if (s === 3) {
-      if (!data.destinationCountry) newErrors.destinationCountry = 'Required field';
-      if (!data.portOfEntry) newErrors.portOfEntry = 'Required field';
-      if (!data.arrivalDate) newErrors.arrivalDate = 'Required field';
-      if (!data.departureDate) newErrors.departureDate = 'Required field';
-      const arrival = parseDate(data.arrivalDate);
-      const departure = parseDate(data.departureDate);
-      if (arrival && departure && arrival > departure) {
-        newErrors.departureDate = 'Departure must be after arrival';
-      }
-    }
-    if (s === 4) {
-      if (!data.stayDurationDays) newErrors.stayDurationDays = 'Required field';
-      if (!data.accommodationType) newErrors.accommodationType = 'Required field';
-      if (!data.accommodationAddress) newErrors.accommodationAddress = 'Required field';
-    }
-    if (s === 5) {
-      if (!data.purposeOfVisit) newErrors.purposeOfVisit = 'Required field';
-    }
-    if (s === 6) {
-      if (data.visaDenied === '') newErrors.visaDenied = 'Required field';
-      if (data.deported === '') newErrors.deported = 'Required field';
-      if (data.overstayed === '') newErrors.overstayed = 'Required field';
-      if (data.criminalRecord === '') newErrors.criminalRecord = 'Required field';
-      if (!Array.isArray(data.countriesVisited) || data.countriesVisited.length === 0) {
-        newErrors.countriesVisited = 'Select at least one country';
-      }
-    }
-    return newErrors;
-  };
-
   const validateStep = (s) => {
     setSubmitError('');
-    setErrors({});
     const newErrors = getErrorsForStep(s, form);
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return stepError('Please complete required fields.');
+      setErrors((prev) => ({ ...prev, ...newErrors }));
+      return stepError('Please correct the highlighted fields.');
+    }
+    setErrors((prev) => {
+      const next = { ...prev };
+      Object.keys(fieldStepMap)
+        .filter((field) => fieldStepMap[field] === s)
+        .forEach((field) => { delete next[field]; });
+      return next;
+    });
+    return true;
+  };
+
+  const validateAll = () => {
+    setSubmitError('');
+    const allErrors = getAllErrors(form);
+    setErrors(allErrors);
+    if (Object.keys(allErrors).length > 0) {
+      const firstStep = getFirstErrorStep(allErrors);
+      setStep(firstStep);
+      return stepError('Please correct the highlighted fields before submitting.');
     }
     return true;
   };
@@ -411,49 +549,30 @@ export default function NewEntryPage() {
   const resetForm = () => {
     setStep(0);
     setErrors({});
-    setForm({
-      fullName: '',
-      gender: '',
-      dob: '',
-      nationality: '',
-      residenceCountry: '',
-      phone: '',
-      email: '',
-      passportNumber: '',
-      passportIssuingCountry: '',
-      passportIssueDate: '',
-      passportExpiryDate: '',
-      visaType: '',
-      visaNumber: '',
-      visaIssuingCountry: '',
-      visaIssueDate: '',
-      visaExpiryDate: '',
-      entryCount: '',
-      destinationCountry: '',
-      portOfEntry: '',
-      arrivalDate: '',
-      departureDate: '',
-      stayDurationDays: '',
-      accommodationType: '',
-      accommodationAddress: '',
-      purposeOfVisit: '',
-      visaDenied: 'false',
-      deported: 'false',
-      overstayed: 'false',
-      countriesVisited: [],
-      criminalRecord: 'false',
-    });
+    setForm(initialFormState);
+    setCountrySearch('');
     setSubmitError('');
   };
 
   const submitEntry = async () => {
-    if (!validateStep(6)) return;
+    if (!validateAll()) return;
     setSubmitting(true);
     setSubmitError('');
     setSubmitOk('');
     try {
       await api.createEntry({
         ...form,
+        fullName: trimValue(form.fullName),
+        nationality: trimValue(form.nationality),
+        residenceCountry: trimValue(form.residenceCountry),
+        phone: trimValue(form.phone),
+        email: trimValue(form.email),
+        passportNumber: trimValue(form.passportNumber),
+        passportIssuingCountry: trimValue(form.passportIssuingCountry),
+        visaNumber: trimValue(form.visaNumber),
+        visaIssuingCountry: trimValue(form.visaIssuingCountry),
+        destinationCountry: trimValue(form.destinationCountry),
+        accommodationAddress: trimValue(form.accommodationAddress),
         stayDurationDays: Number(form.stayDurationDays),
         visaDenied: form.visaDenied === 'true',
         deported: form.deported === 'true',
@@ -463,24 +582,15 @@ export default function NewEntryPage() {
       resetForm();
       setSubmitOk('Entry saved.');
     } catch (err) {
+      if (err.fields) {
+        setErrors(err.fields);
+        setStep(getFirstErrorStep(err.fields));
+      }
       setSubmitError(err.message || 'Failed to save entry.');
     } finally {
       setSubmitting(false);
     }
   };
-
-  const formHasErrors = useMemo(() => {
-    const allErrors = {
-      ...getErrorsForStep(0, form),
-      ...getErrorsForStep(1, form),
-      ...getErrorsForStep(2, form),
-      ...getErrorsForStep(3, form),
-      ...getErrorsForStep(4, form),
-      ...getErrorsForStep(5, form),
-      ...getErrorsForStep(6, form),
-    };
-    return Object.keys(allErrors).length > 0;
-  }, [form]);
 
   return (
     <div className="min-h-screen bg-navy-900 bg-grid">
@@ -614,6 +724,27 @@ export default function NewEntryPage() {
           {step === 7 && (
             <div>
               <h2 className="text-lg font-semibold text-white mb-6">Review and Submission</h2>
+              {reviewErrors.length > 0 && (
+                <div className="glass-card px-4 py-4 mb-6">
+                  <div className="text-sm text-red-300 mb-3">Resolve these issues before submitting:</div>
+                  <div className="space-y-3">
+                    {reviewErrors.map(([label, items]) => (
+                      <div key={label}>
+                        <button
+                          type="button"
+                          className="text-xs uppercase tracking-[2px] text-accent"
+                          onClick={() => setStep(items[0].step)}
+                        >
+                          {label}
+                        </button>
+                        <div className="mt-1 text-xs text-red-300">
+                          {items.map((item) => item.message).join(' | ')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                 {Object.entries(form).map(([key, value]) => (
                   <div key={key} className="glass-card px-4 py-3">
@@ -623,7 +754,7 @@ export default function NewEntryPage() {
                 ))}
               </div>
               <div className="mt-6">
-                <button className="btn-accent text-sm py-2" onClick={submitEntry} disabled={submitting || formHasErrors}>
+                <button className="btn-accent text-sm py-2" onClick={submitEntry} disabled={submitting}>
                   Submit Entry
                 </button>
               </div>

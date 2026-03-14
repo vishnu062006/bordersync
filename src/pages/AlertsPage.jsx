@@ -60,14 +60,10 @@ export default function AlertsPage() {
     const [agencies, setAgencies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const isUnauthenticated = !authLoading && !user;
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            setError('Not authenticated.');
-            setLoading(false);
-            return;
-        }
+        if (authLoading || !user) return;
         let active = true;
         api.getAlerts()
             .then((data) => {
@@ -84,6 +80,9 @@ export default function AlertsPage() {
         return () => { active = false; };
     }, [user, authLoading]);
 
+    const pageLoading = authLoading || (!isUnauthenticated && loading);
+    const pageError = isUnauthenticated ? 'Not authenticated.' : error;
+
     const sortedAlerts = [...alerts].sort((a, b) => {
         const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
         return order[a.severity] - order[b.severity];
@@ -97,8 +96,9 @@ export default function AlertsPage() {
         setAcknowledgedMap((prev) => ({ ...prev, [alertId]: true }));
         try {
             await api.ackAlert(alertId);
-        } catch (err) {
+        } catch {
             setAcknowledgedMap((prev) => ({ ...prev, [alertId]: false }));
+            setError('Failed to acknowledge alert.');
         }
     };
 
@@ -110,11 +110,11 @@ export default function AlertsPage() {
 
     return (
         <div className="min-h-screen bg-navy-900 bg-grid">
-            {loading && (
+            {pageLoading && (
                 <div className="glass-card p-4 text-sm text-gray-400 mb-6">Loading alerts...</div>
             )}
-            {error && (
-                <div className="glass-card p-4 text-sm text-red-400 mb-6">{error}</div>
+            {pageError && (
+                <div className="glass-card p-4 text-sm text-red-400 mb-6">{pageError}</div>
             )}
             {/* Header */}
             <header className="mb-8 opacity-0 animate-fade-up">

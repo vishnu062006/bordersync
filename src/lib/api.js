@@ -18,13 +18,19 @@ async function authFetch(path, options = {}) {
 
   if (!res.ok) {
     let message = 'Request failed';
+    let fieldErrors;
     try {
       const data = await res.json();
       message = data.error || message;
+      fieldErrors = data.fields;
     } catch {
       // ignore
     }
-    throw new Error(message);
+    const error = new Error(message);
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      error.fields = fieldErrors;
+    }
+    throw error;
   }
 
   return res.json();

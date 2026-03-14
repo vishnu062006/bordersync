@@ -11,14 +11,10 @@ export default function DashboardPage() {
     const [agencies, setAgencies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const isUnauthenticated = !authLoading && !user;
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            setError('Not authenticated.');
-            setLoading(false);
-            return;
-        }
+        if (authLoading || !user) return;
         let active = true;
         api.getDashboard()
             .then((data) => {
@@ -36,13 +32,16 @@ export default function DashboardPage() {
         return () => { active = false; };
     }, [user, authLoading]);
 
+    const pageLoading = authLoading || (!isUnauthenticated && loading);
+    const pageError = isUnauthenticated ? 'Not authenticated.' : error;
+
     return (
         <div className="min-h-screen bg-navy-900 bg-grid">
-            {loading && (
+            {pageLoading && (
                 <div className="glass-card p-4 text-sm text-gray-400 mb-6">Loading dashboard...</div>
             )}
-            {error && (
-                <div className="glass-card p-4 text-sm text-red-400 mb-6">{error}</div>
+            {pageError && (
+                <div className="glass-card p-4 text-sm text-red-400 mb-6">{pageError}</div>
             )}
             {/* Header */}
             <header className="mb-8 opacity-0 animate-fade-up">

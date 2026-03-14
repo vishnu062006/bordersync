@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Circle, Shield, Lock, ArrowRight } from 'lucide-react';
 import { animate } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
@@ -101,21 +101,21 @@ const GlowingEffect = memo(({
 // ── Floating geometric shape ──────────────────────────────────────────────────
 function ElegantShape({ className, delay = 0, width = 400, height = 100, rotate = 0, gradient = 'from-white/[0.08]' }) {
     return (
-        <motion.div
+        <Motion.div
             initial={{ opacity: 0, y: -150, rotate: rotate - 15 }}
             animate={{ opacity: 1, y: 0, rotate }}
             transition={{ duration: 2.4, delay, ease: [0.23, 0.86, 0.39, 0.96], opacity: { duration: 1.2 } }}
             className={`absolute ${className}`}
         >
-            <motion.div
+            <Motion.div
                 animate={{ y: [0, 15, 0] }}
                 transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ width, height }}
                 className="relative"
             >
                 <div className={`absolute inset-0 rounded-full bg-gradient-to-r to-transparent ${gradient} backdrop-blur-[2px] border-2 border-white/[0.12]`} />
-            </motion.div>
-        </motion.div>
+            </Motion.div>
+        </Motion.div>
     );
 }
 
@@ -208,19 +208,19 @@ function ScrollReveal() {
     return (
         <div style={{ background: 'linear-gradient(to bottom, #030712, #0B1120)' }} className="pb-32 pt-4">
             <div className="max-w-4xl mx-auto px-6 text-center mb-10">
-                <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                <Motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }} viewport={{ once: true }}
                     className="text-[11px] uppercase tracking-[4px] mb-3" style={{ color: 'rgba(232,93,26,0.6)' }}>
                     Live Command Center
-                </motion.p>
-                <motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                </Motion.p>
+                <Motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.1 }} viewport={{ once: true }}
                     className="text-3xl font-bold text-white/75">
                     See BorderSync in action
-                </motion.h2>
-                <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity }} className="mt-4">
+                </Motion.h2>
+                <Motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity }} className="mt-4">
                     <ArrowRight className="mx-auto rotate-90 w-4 h-4" style={{ color: 'rgba(232,93,26,0.4)' }} />
-                </motion.div>
+                </Motion.div>
             </div>
 
             <div ref={containerRef} className="max-w-4xl mx-auto px-6" style={{ perspective: '1200px' }}>
@@ -365,14 +365,14 @@ export default function LoginPage() {
 
                     {/* LEFT */}
                     <div className="flex-1 text-center lg:text-left">
-                        <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible"
+                        <Motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible"
                             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-8"
                             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
                             <Circle className="w-2 h-2 fill-orange-500 text-orange-500" />
                             <span className="text-[11px] text-white/45 tracking-[3px] uppercase">Secure Border Intelligence</span>
-                        </motion.div>
+                        </Motion.div>
 
-                        <motion.h1 custom={1} variants={fadeUp} initial="hidden" animate="visible"
+                        <Motion.h1 custom={1} variants={fadeUp} initial="hidden" animate="visible"
                             className="text-5xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
                                 One Platform.
@@ -382,15 +382,15 @@ export default function LoginPage() {
                                 style={{ backgroundImage: 'linear-gradient(90deg,#E85D1A,#FF9A5C,#E85D1A)', backgroundSize: '200%' }}>
                                 Every Border.
                             </span>
-                        </motion.h1>
+                        </Motion.h1>
 
-                        <motion.p custom={2} variants={fadeUp} initial="hidden" animate="visible"
+                        <Motion.p custom={2} variants={fadeUp} initial="hidden" animate="visible"
                             className="text-base leading-relaxed max-w-md mb-10 font-light"
                             style={{ color: 'rgba(255,255,255,0.32)' }}>
                             AI-powered border management. Real-time coordination across all agencies. Zero friction.
-                        </motion.p>
+                        </Motion.p>
 
-                        <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible"
+                        <Motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible"
                             className="flex flex-wrap items-center gap-5 justify-center lg:justify-start">
                             {['256-bit encrypted', 'Multi-agency sync', 'AI risk scoring'].map((t, i) => (
                                 <span key={i} className="flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>
@@ -398,11 +398,11 @@ export default function LoginPage() {
                                     {t}
                                 </span>
                             ))}
-                        </motion.div>
+                        </Motion.div>
                     </div>
 
                     {/* RIGHT — login card */}
-                    <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
+                    <Motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
                         className="w-full max-w-sm flex-shrink-0">
 
                         {/* GlowingEffect wrapper */}
@@ -475,7 +475,7 @@ export default function LoginPage() {
                                     )}
 
                                     {/* Button */}
-                                    <motion.button
+                                    <Motion.button
                                         type="submit" disabled={isLoading}
                                         whileHover={{ scale: 1.02, boxShadow: '0 8px 40px rgba(232,93,26,0.65)' }}
                                         whileTap={{ scale: 0.975 }}
@@ -499,7 +499,7 @@ export default function LoginPage() {
                                                 <ArrowRight className="w-4 h-4 flex-shrink-0 ml-auto" />
                                             </>
                                         )}
-                                    </motion.button>
+                                    </Motion.button>
                                 </form>
 
                                 {/* Links */}
@@ -517,7 +517,7 @@ export default function LoginPage() {
                                 </div>
                             </div>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 </div>
             </div>
 
