@@ -3,9 +3,11 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import NewEntryPage from './pages/NewEntryPage';
 import AlertsPage from './pages/AlertsPage';
+import RiskAnalysisPage from './pages/RiskAnalysisPage';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { TravelerFlowProvider } from './context/TravelerFlowContext';
 
 function DashboardLayout() {
   return (
@@ -21,22 +23,25 @@ function DashboardLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/new-entry" element={<NewEntryPage />} />
-            <Route path="/alerts" element={<AlertsPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <TravelerFlowProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/new-entry" element={<NewEntryPage />} />
+              <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/risk-analysis" element={<RiskAnalysisPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </TravelerFlowProvider>
     </AuthProvider>
   );
 }

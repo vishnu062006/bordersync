@@ -1,8 +1,9 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const { nanoid } = require('nanoid');
+const { callGemini, buildFallbackInsight } = require('./gemini');
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -342,6 +343,25 @@ app.post('/api/alerts/:id/ack', async (req, res) => {
 
   await ref.set({ acknowledged: true }, { merge: true });
   res.json({ ok: true });
+});
+
+app.post('/api/risk-analysis/explain', async (req, res) => {
+  const traveler = req.body?.traveler || {};
+  const result = req.body?.result || {};
+
+  if (!result || typeof result.overallRisk !== 'number' || !result.riskBand || !result.recommendedAction) {
+    return res.status(400).json({ error: 'A valid risk result is required.' });
+  }
+
+  try {
+    const insight = await callGemini(result, traveler);
+    return res.json({ insight });
+  } catch (error) {
+    return res.json({
+      insight: buildFallbackInsight(result, traveler),
+      warning: error.message || 'Gemini request failed.',
+    });
+  }
 });
 
 app.post('/api/entries', async (req, res) => {

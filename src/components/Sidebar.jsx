@@ -30,6 +30,15 @@ const navItems = [
         ),
         badge: 3,
     },
+    {
+        path: '/risk-analysis',
+        label: 'AI Risk',
+        icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18l-.813-2.096a2 2 0 00-1.091-1.091L5 14l2.096-.813a2 2 0 001.091-1.091L9 10l.813 2.096a2 2 0 001.091 1.091L13 14l-2.096.813a2 2 0 00-1.091 1.091zM18 13l.593 1.407L20 15l-1.407.593L18 17l-.593-1.407L16 15l1.407-.593L18 13zm-1-8l.898 2.102L20 8l-2.102.898L17 11l-.898-2.102L14 8l2.102-.898L17 5z" />
+            </svg>
+        ),
+    },
 ];
 
 export default function Sidebar() {

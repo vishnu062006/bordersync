@@ -42,4 +42,5 @@ export const api = {
   getMeta: () => authFetch('/api/meta'),
   createEntry: (payload) => authFetch('/api/entries', { method: 'POST', body: JSON.stringify(payload) }),
   ackAlert: (id) => authFetch(`/api/alerts/${id}/ack`, { method: 'POST' }),
+  generateRiskNarrative: (payload) => authFetch('/api/risk-analysis/explain', { method: 'POST', body: JSON.stringify(payload) }),
 };
