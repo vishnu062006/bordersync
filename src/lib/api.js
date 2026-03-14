@@ -38,6 +38,7 @@ async function authFetch(path, options = {}) {
 
 export const api = {
   getDashboard: () => authFetch('/api/dashboard'),
+  getEntries: () => authFetch('/api/entries'),
   getAlerts: () => authFetch('/api/alerts'),
   getMeta: () => authFetch('/api/meta'),
   createEntry: (payload) => authFetch('/api/entries', { method: 'POST', body: JSON.stringify(payload) }),

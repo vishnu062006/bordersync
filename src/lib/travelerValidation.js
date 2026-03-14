@@ -127,8 +127,8 @@ export function getErrorsForStep(step, data, meta) {
     if (!['true', 'false', true, false].includes(data.deported)) next.deported = 'Select Yes or No';
     if (!['true', 'false', true, false].includes(data.overstayed)) next.overstayed = 'Select Yes or No';
     if (!['true', 'false', true, false].includes(data.criminalRecord)) next.criminalRecord = 'Select Yes or No';
-    if (!Array.isArray(data.countriesVisited) || data.countriesVisited.length === 0) {
-      next.countriesVisited = 'Select at least one country';
+    if (!Array.isArray(data.countriesVisited)) {
+      next.countriesVisited = 'Invalid value';
     }
   }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { AlertTriangle, Building2, ClipboardList, Users } from 'lucide-react';
 
 const colorMap = {
     accent: {
@@ -34,6 +35,13 @@ const colorMap = {
 export default function StatCard({ stat, index }) {
     const cardRef = useRef(null);
     const colors = colorMap[stat.color] || colorMap.accent;
+    const iconMap = {
+        1: ClipboardList,
+        2: Users,
+        3: AlertTriangle,
+        4: Building2,
+    };
+    const Icon = iconMap[stat.id] || ClipboardList;
 
     useEffect(() => {
         const el = cardRef.current;
@@ -76,7 +84,7 @@ export default function StatCard({ stat, index }) {
 
             <div className="flex items-start justify-between mb-4 relative z-10">
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-2xl`}>
-                    {stat.icon}
+                    <Icon className={`w-6 h-6 ${colors.text}`} />
                 </div>
                 {stat.changeType === 'live' ? (
                     <div className="flex items-center gap-1.5">

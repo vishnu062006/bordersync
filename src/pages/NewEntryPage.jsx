@@ -451,6 +451,7 @@ export default function NewEntryPage() {
                   options={meta.nationalities}
                   error={errors.countriesVisited}
                   placeholder="Search and select countries"
+                  required={false}
                   multiple
                 />
               </div>

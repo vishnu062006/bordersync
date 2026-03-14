@@ -29,9 +29,6 @@ export default function RiskGauge({ score, label, tone }) {
           </div>
         </div>
       </div>
-      <p className="text-xs text-gray-400 mt-5 text-center max-w-[220px]">
-        Weighted rule-based score built from travel, document, and compliance signals.
-      </p>
     </div>
   );
 }

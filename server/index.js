@@ -164,8 +164,8 @@ function validateEntryPayload(payload, meta = {}) {
   if (typeof payload.deported !== 'boolean') addFieldError(errors, 'deported', 'Select Yes or No');
   if (typeof payload.overstayed !== 'boolean') addFieldError(errors, 'overstayed', 'Select Yes or No');
   if (typeof payload.criminalRecord !== 'boolean') addFieldError(errors, 'criminalRecord', 'Select Yes or No');
-  if (!Array.isArray(payload.countriesVisited) || payload.countriesVisited.length === 0) {
-    addFieldError(errors, 'countriesVisited', 'Select at least one country');
+  if (!Array.isArray(payload.countriesVisited)) {
+    addFieldError(errors, 'countriesVisited', 'Invalid value');
   }
 
   if (Array.isArray(payload.countriesVisited) && countries.length > 0) {
@@ -303,6 +303,12 @@ app.get('/api/dashboard', async (req, res) => {
   ];
 
   res.json({ stats, travelers, agencies });
+});
+
+app.get('/api/entries', async (req, res) => {
+  const entriesSnap = await db.collection('entries').orderBy('entryTime', 'desc').limit(100).get();
+  const entries = entriesSnap.docs.map((d) => d.data());
+  res.json({ entries });
 });
 
 app.get('/api/alerts', async (req, res) => {
